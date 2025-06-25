@@ -1,0 +1,35 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Poll {
+  id          String      @id @default(uuid())
+  createdAt   DateTime    @default(now())
+  restaurants Restaurant[]
+  votes       Vote[]
+  slug        String      @unique
+}
+
+model Restaurant {
+  id        String   @id @default(uuid())
+  name      String
+  location  String
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  pollId    String
+}
+
+model Vote {
+  id           String   @id @default(uuid())
+  poll         Poll     @relation(fields: [pollId], references: [id])
+  pollId       String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  rank         Int
+}
