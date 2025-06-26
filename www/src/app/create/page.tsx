@@ -1,7 +1,15 @@
 "use client";
 
 import { JSX, useState } from "react";
-import { Button, InputNumber, Typography, Space, Card, message } from "antd";
+import {
+  Button,
+  InputNumber,
+  Typography,
+  Space,
+  Card,
+  Alert,
+  Input,
+} from "antd";
 import { useRouter } from "next/navigation";
 
 const { Title } = Typography;
@@ -17,11 +25,19 @@ export default function Page(): JSX.Element {
   const [restaurantCount, setRestaurantCount] = useState<number>(3);
   const [voterCount, setVoterCount] = useState<number>(3);
   const [loading, setLoading] = useState<boolean>(false);
+  const [alert, setAlert] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
+
+  const [titleText, setTitleText] = useState<string>("");
 
   const router = useRouter();
 
   const createPoll = async () => {
     setLoading(true);
+    setAlert({ type: null, message: "" });
+
     try {
       const response = await fetch("/api/create-poll", {
         method: "POST",
@@ -42,13 +58,17 @@ export default function Page(): JSX.Element {
         throw new Error(data.error || "Failed to create poll");
       }
 
-      message.success("Poll created successfully!");
+      setAlert({ type: "success", message: "Poll created successfully!" });
       // Navigate to the poll page or wherever you want to go after creation
-      router.push("/rank");
+      setTimeout(() => {
+        router.push("/rank");
+      }, 1500);
     } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : "Failed to create poll"
-      );
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to create poll",
+      });
     } finally {
       setLoading(false);
     }
@@ -61,6 +81,16 @@ export default function Page(): JSX.Element {
           <Title level={2} style={{ textAlign: "center", margin: 0 }}>
             Create Poll
           </Title>
+
+          {alert.type && (
+            <Alert
+              message={alert.message}
+              type={alert.type}
+              showIcon
+              closable
+              onClose={() => setAlert({ type: null, message: "" })}
+            />
+          )}
 
           <Space direction="vertical" style={styles.fullWidth}>
             <label htmlFor="restaurant-count">
@@ -83,6 +113,17 @@ export default function Page(): JSX.Element {
               value={voterCount}
               onChange={(value) => setVoterCount(value || 3)}
               style={styles.fullWidth}
+            />
+
+            <label htmlFor="restaurant-count">
+              Add a short title for this:
+            </label>
+            <Input
+              id="title-text"
+              value={titleText}
+              onChange={(e) => setTitleText(e.target.value)}
+              style={styles.fullWidth}
+              placeholder="Andre's birthday dinner"
             />
           </Space>
 

@@ -12,12 +12,14 @@ export default function Home() {
         vertical
         style={{ minHeight: "100vh" }}
       >
-        <Title>Let's eat!</Title>
+        <Title>Let&apos;s eat!</Title>
         <Text>
           RestauRank is the easiest way to agree on restaurants with friends.
         </Text>
         <Space direction="vertical" size="large">
-          <Button href="/create">Create poll</Button>
+          <Button href="/create" type="primary">
+            Create poll
+          </Button>
         </Space>
       </Flex>
     </main>

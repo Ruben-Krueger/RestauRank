@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "../../../generated/prisma";
 
-const prisma = new PrismaClient();
-
 export async function POST(request: NextRequest) {
   try {
+    const prisma = new PrismaClient();
     const body = await request.json();
-    const { title, description, maxRankings, restaurantCount } = body;
+    const { title, voterCount, restaurantCount } = body;
 
     // Validate required fields
     if (!title || typeof title !== "string") {
@@ -16,14 +15,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (restaurantCount && (restaurantCount < 3 || restaurantCount > 10)) {
+    if (!restaurantCount || restaurantCount < 3 || restaurantCount > 10) {
       return NextResponse.json(
         { error: "Restaurant count must be between 3 and 10" },
         { status: 400 }
       );
     }
 
-    if (maxRankings && (maxRankings < 1 || maxRankings > 10)) {
+    if (!voterCount && (voterCount < 3 || voterCount > 10)) {
       return NextResponse.json(
         { error: "Max rankings must be between 1 and 10" },
         { status: 400 }
@@ -34,67 +33,54 @@ export async function POST(request: NextRequest) {
     const poll = await prisma.poll.create({
       data: {
         title: title.trim(),
-        description: description?.trim() || null,
-        maxRankings: maxRankings || 4,
+        maxVoters: voterCount,
       },
     });
 
-    // If restaurantCount is provided, randomly select restaurants
-    if (restaurantCount) {
-      const availableRestaurants = await prisma.restaurant.findMany({
-        take: restaurantCount,
-        orderBy: {
-          // Random selection - this is a simple approach
-          // For production, you might want a more sophisticated random selection
-          id: "asc",
+    const availableRestaurants = await prisma.restaurant.findMany({
+      take: restaurantCount,
+    });
+
+    if (availableRestaurants < restaurantCount) {
+      return NextResponse.json(
+        {
+          error: "Error: could not find enough restaurants",
         },
-      });
-
-      if (availableRestaurants.length < restaurantCount) {
-        return NextResponse.json(
-          {
-            error: `Not enough restaurants available. Only ${availableRestaurants.length} restaurants found.`,
-          },
-          { status: 400 }
-        );
-      }
-
-      // Connect the selected restaurants to the poll
-      await prisma.poll.update({
-        where: { id: poll.id },
-        data: {
-          restaurants: {
-            connect: availableRestaurants.map((restaurant) => ({
-              id: restaurant.id,
-            })),
-          },
-        },
-      });
-
-      // Fetch the poll with restaurants
-      const pollWithRestaurants = await prisma.poll.findUnique({
-        where: { id: poll.id },
-        include: {
-          restaurants: true,
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        poll: pollWithRestaurants,
-        message: `Poll created successfully with ${availableRestaurants.length} restaurants`,
-      });
+        { status: 500 }
+      );
     }
+
+    // Connect the selected restaurants to the poll
+    await prisma.poll.update({
+      where: { id: poll.id },
+      data: {
+        restaurants: {
+          connect: availableRestaurants.map((restaurant) => ({
+            id: restaurant.id,
+          })),
+        },
+      },
+    });
+
+    // Fetch the poll with restaurants
+    const pollWithRestaurants = await prisma.poll.findUnique({
+      where: { id: poll.id },
+      include: {
+        restaurants: true,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      poll,
-      message: "Poll created successfully",
+      poll: pollWithRestaurants,
+      message: `Poll created successfully with ${availableRestaurants.length} restaurants`,
     });
   } catch (error) {
-    console.error("Error creating poll:", error);
+    console.log(error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: `Internal server error: ${JSON.stringify(error)}`,
+      },
       { status: 500 }
     );
   }
