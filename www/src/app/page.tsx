@@ -1,6 +1,5 @@
 "use client";
-import { Button } from "antd";
-import { Flex, Typography, Space } from "antd";
+import { Button, Flex, Typography, Space } from "antd";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +17,7 @@ export default function Home() {
           RestauRank is the easiest way to agree on restaurants with friends.
         </Text>
         <Space direction="vertical" size="large">
-          <Button href="/create">Begin</Button>
+          <Button href="/create">Create poll</Button>
         </Space>
       </Flex>
     </main>
