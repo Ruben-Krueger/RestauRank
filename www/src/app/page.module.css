@@ -89,6 +89,7 @@ a.primary {
   background: var(--foreground);
   color: var(--background);
   gap: 8px;
+  border: 2px solid #ff0000;
 }
 
 a.secondary {
@@ -166,7 +167,15 @@ a.secondary {
 }
 
 @media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
+  .page {
+    --background: #222;
+    --foreground: #ff4d4d;
+    --gray-rgb: 255, 255, 255;
+    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
+    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
+
+    --button-primary-hover: #ff6666;
+    --button-secondary-hover: #1a1a1a;
+    color: #fff;
   }
 }
