@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -23,6 +22,7 @@ model Restaurant {
   location  String
   poll      Poll     @relation(fields: [pollId], references: [id])
   pollId    String
+  votes     Vote[]
 }
 
 model Vote {
