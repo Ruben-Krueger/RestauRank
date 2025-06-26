@@ -8,28 +8,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id    String @id @default(uuid())
+  email String @unique
+  name  String?
+  votes  Vote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Poll {
-  id          String      @id @default(uuid())
-  createdAt   DateTime    @default(now())
-  restaurants Restaurant[]
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  isActive    Boolean      @default(true)
+  maxRankings Int          @default(4) // Number of restaurants users can rank
+  restaurants Restaurant[] 
   votes       Vote[]
-  slug        String      @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Restaurant {
-  id        String   @id @default(uuid())
-  name      String
-  location  String
-  poll      Poll     @relation(fields: [pollId], references: [id])
-  pollId    String
-  votes     Vote[]
+  id    String            @id @default(uuid())
+  name  String
+  location String
+  polls  Poll[] // Backward relation
+  votes  Vote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vote {
   id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
   poll         Poll     @relation(fields: [pollId], references: [id])
   pollId       String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId String
-  rank         Int
+  rank         Int      // 1 = first choice, 2 = second choice, etc.
+  createdAt    DateTime @default(now())
+  
+  @@unique([userId, pollId, restaurantId]) // Prevent duplicate votes from same user for same restaurant in same poll
 }
+

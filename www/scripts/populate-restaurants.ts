@@ -146,6 +146,17 @@ async function populateMultipleLocations(
 
 async function main() {
   try {
+    const restaurants = await searchRestaurants("San Francisco, CA", 20);
+
+    const restaurantData = restaurants.map((restaurant) => ({
+      name: restaurant.name || "Unknown Restaurant",
+      location: restaurant.formatted_address || "Unknown Location",
+    }));
+
+    await prisma.restaurant.createMany({
+      data: restaurantData,
+    });
+
     // Example: Create a poll for restaurants in San Francisco
     await createPollWithRestaurants("San Francisco, CA", "sf-restaurants-2024");
 
