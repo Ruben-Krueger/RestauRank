@@ -1,8 +1,8 @@
 "use client";
-import { Button, Flex, Typography, Space, Card } from "antd";
+import { Button, Flex, Typography, Space, Card, Alert } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -24,7 +24,6 @@ import styles from "./page.module.css";
 
 const { Title, Text } = Typography;
 
-// Sortable restaurant item component
 function SortableRestaurantItem({
   restaurant,
   index,
@@ -65,7 +64,6 @@ function SortableRestaurantItem({
         type="text"
         icon={<InfoCircleOutlined />}
         onClick={() => {
-          console.log("here");
           window.open(restaurant.link, "_blank");
         }}
         size="small"
@@ -78,11 +76,7 @@ function SortableRestaurantItem({
 export default function VotePage() {
   const params = useParams();
   const voteId = params.id;
-  const [rankedOptions, setRankedOptions] = useState<
-    Array<{ id: string; name: string; link: string }>
-  >([]);
 
-  // Mock data - you'll replace this with actual data fetching
   const mockPoll = {
     id: voteId,
     title: "Rank your favorite restaurants",
@@ -105,10 +99,9 @@ export default function VotePage() {
     ],
   };
 
-  // Initialize ranked options when component mounts
-  useEffect(() => {
-    setRankedOptions([...mockPoll.options]);
-  }, []);
+  const [rankedOptions, setRankedOptions] = useState<
+    Array<{ id: string; name: string; link: string }>
+  >([...mockPoll.options]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -131,10 +124,10 @@ export default function VotePage() {
   };
 
   const handleVote = async () => {
-    try {
-      console.log("Ranked options:", rankedOptions);
-      console.log("Poll ID:", voteId);
+    setError(null);
+    setIsSuccesful(false);
 
+    try {
       const response = await fetch(`/api/vote/${voteId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,18 +144,20 @@ export default function VotePage() {
       if (!response.ok) {
         throw new Error(result.error || "Failed to submit vote");
       }
+      setIsSuccesful(true);
 
-      alert("Ranked vote submitted successfully!");
       // Optionally redirect or show results
     } catch (error) {
-      console.error("Error submitting vote:", error);
-      alert(
+      setError(
         error instanceof Error
-          ? error.message
-          : "Failed to submit vote. Please try again."
+          ? error
+          : new Error("Failed to submit vote. Please try again.")
       );
     }
   };
+
+  const [error, setError] = useState<Error | null>(null);
+  const [isSuccesful, setIsSuccesful] = useState<boolean>(false);
 
   return (
     <main className={styles.votePage}>
@@ -209,16 +204,29 @@ export default function VotePage() {
             </SortableContext>
           </DndContext>
 
-          <div className={styles.voteSubmit}>
-            <Button
-              type="primary"
-              onClick={handleVote}
-              block
-              disabled={rankedOptions.length === 0}
-            >
-              Submit
-            </Button>
-          </div>
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <div className={styles.voteSubmit}>
+              <Button
+                type="primary"
+                onClick={handleVote}
+                block
+                disabled={rankedOptions.length === 0}
+              >
+                Submit
+              </Button>
+            </div>
+            <div>
+              {error ? (
+                <Alert message={error.message} type="error" showIcon />
+              ) : isSuccesful ? (
+                <Alert
+                  message="Your vote was submitted successfully!"
+                  type="success"
+                  showIcon
+                />
+              ) : null}
+            </div>
+          </Space>
 
           <div className={styles.votePollId}>
             <Text type="secondary">Poll ID: {voteId}</Text>
