@@ -1,7 +1,8 @@
 "use client";
-import { Button, Flex, Typography, Space, Card, Form } from "antd";
+import { Button, Flex, Typography, Space, Card } from "antd";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,8 +17,8 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import styles from "./page.module.css";
 
@@ -28,7 +29,7 @@ function SortableRestaurantItem({
   restaurant,
   index,
 }: {
-  restaurant: { id: string; name: string; votes: number };
+  restaurant: { id: string; name: string; link: string };
   index: number;
 }) {
   const {
@@ -47,24 +48,29 @@ function SortableRestaurantItem({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={styles.sortableItem}
-    >
-      <Flex
-        justify="space-between"
-        align="center"
-        className={styles.voteOptionRow}
+    <div className={styles.restaurantRow}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={styles.sortableItem}
       >
         <Flex align="center" gap="small">
           <div className={styles.rankBadge}>{index + 1}</div>
           <Text strong>{restaurant.name}</Text>
         </Flex>
-        <Text type="secondary">({restaurant.votes} votes)</Text>
-      </Flex>
+      </div>
+      <Button
+        type="text"
+        icon={<InfoCircleOutlined />}
+        onClick={() => {
+          console.log("here");
+          window.open(restaurant.link, "_blank");
+        }}
+        size="small"
+        className={styles.infoButton}
+      />
     </div>
   );
 }
@@ -73,25 +79,36 @@ export default function VotePage() {
   const params = useParams();
   const voteId = params.id;
   const [rankedOptions, setRankedOptions] = useState<
-    Array<{ id: string; name: string; votes: number }>
+    Array<{ id: string; name: string; link: string }>
   >([]);
-  const [form] = Form.useForm();
 
   // Mock data - you'll replace this with actual data fetching
   const mockPoll = {
     id: voteId,
     title: "Rank your favorite restaurants",
     options: [
-      { id: "1", name: "Restaurant A", votes: 5 },
-      { id: "2", name: "Restaurant B", votes: 3 },
-      { id: "3", name: "Restaurant C", votes: 7 },
+      {
+        id: "1",
+        name: "Tartine Bakery",
+        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
+      },
+      {
+        id: "2",
+        name: "Restaurant B",
+        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
+      },
+      {
+        id: "3",
+        name: "Restaurant C",
+        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
+      },
     ],
   };
 
   // Initialize ranked options when component mounts
-  useState(() => {
+  useEffect(() => {
     setRankedOptions([...mockPoll.options]);
-  });
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -118,22 +135,32 @@ export default function VotePage() {
       console.log("Ranked options:", rankedOptions);
       console.log("Poll ID:", voteId);
 
-      // You'll make an API call here to submit the ranked vote
-      // await fetch(`/api/vote/${voteId}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     rankings: rankedOptions.map((option, index) => ({
-      //       optionId: option.id,
-      //       rank: index + 1
-      //     }))
-      //   })
-      // });
+      const response = await fetch(`/api/vote/${voteId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rankings: rankedOptions.map((option, index) => ({
+            optionId: option.id,
+            rank: index + 1,
+          })),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit vote");
+      }
 
       alert("Ranked vote submitted successfully!");
+      // Optionally redirect or show results
     } catch (error) {
       console.error("Error submitting vote:", error);
-      alert("Failed to submit vote. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit vote. Please try again."
+      );
     }
   };
 
@@ -189,7 +216,7 @@ export default function VotePage() {
               block
               disabled={rankedOptions.length === 0}
             >
-              Submit Ranked Vote
+              Submit
             </Button>
           </div>
 

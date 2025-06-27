@@ -34,6 +34,14 @@
   text-align: center;
 }
 
+.restaurantRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
 .sortableItem {
   background: white;
   border: 1px solid #d9d9d9;
@@ -42,7 +50,7 @@
   cursor: grab;
   transition: all 0.2s ease;
   user-select: none;
-  width: 100%;
+  flex: 1;
 }
 
 .sortableItem:hover {
@@ -78,4 +86,13 @@
 
 .voteSubmit {
   margin-top: 24px;
+}
+
+.infoButton {
+  color: #8c8c8c;
+  transition: color 0.2s ease;
+}
+
+.infoButton:hover {
+  color: #1890ff;
 }
