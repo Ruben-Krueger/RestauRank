@@ -105,19 +105,15 @@ async function main() {
 
     console.log(`Found ${restaurants.length} restaurants`);
 
-    return;
-
     // Use upsert to prevent duplicates based on place_id
     for (const restaurant of restaurants) {
       await prisma.restaurant.upsert({
         where: { placeId: restaurant.place_id! },
         update: {
           name: restaurant.name!,
-          location: restaurant.formatted_address!,
         },
         create: {
           name: restaurant.name!,
-          location: restaurant.formatted_address!,
           placeId: restaurant.place_id!,
         },
       });

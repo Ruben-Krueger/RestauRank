@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../../generated/prisma";
+import { getDB } from "../../../../utils/db";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const prisma = new PrismaClient();
+    const prisma = getDB();
     const pollId = params.id;
     const body = await request.json();
     const { rankings } = body;

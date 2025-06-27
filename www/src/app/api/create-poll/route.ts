@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "../../../generated/prisma";
+import { getDB } from "../../../utils/db";
 
 export async function POST(request: NextRequest) {
   try {
-    const prisma = new PrismaClient();
+    const prisma = getDB();
     const body = await request.json();
     const { title, voterCount, restaurantCount } = body;
 
