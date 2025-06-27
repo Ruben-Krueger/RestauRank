@@ -152,17 +152,6 @@ export async function POST(
     console.error("Error submitting vote:", error);
 
     // Handle unique constraint violation
-    // if (
-    //   error &&
-    //   typeof error === "object" &&
-    //   "code" in error &&
-    //   error.code === "P2002"
-    // ) {
-    //   return NextResponse.json(
-    //     { error: "You have already voted in this poll" },
-    //     { status: 400 }
-    //   );
-    // }
 
     return NextResponse.json(
       {

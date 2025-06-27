@@ -1,8 +1,8 @@
 "use client";
-import { Button, Flex, Typography, Space, Card, Alert } from "antd";
+import { Button, Flex, Typography, Space, Card, Alert, Spin } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -28,7 +28,7 @@ function SortableRestaurantItem({
   restaurant,
   index,
 }: {
-  restaurant: { id: string; name: string; link: string };
+  restaurant: { id: string; name: string; placeId: string };
   index: number;
 }) {
   const {
@@ -64,7 +64,9 @@ function SortableRestaurantItem({
         type="text"
         icon={<InfoCircleOutlined />}
         onClick={() => {
-          window.open(restaurant.link, "_blank");
+          // Create Google Maps link using placeId
+          const mapsUrl = `https://www.google.com/maps/place/?q=place_id:${restaurant.placeId}`;
+          window.open(mapsUrl, "_blank");
         }}
         size="small"
         className={styles.infoButton}
@@ -73,35 +75,32 @@ function SortableRestaurantItem({
   );
 }
 
+interface Poll {
+  id: string;
+  title: string;
+  isActive: boolean;
+  maxVoters: number;
+  currentVoters: number;
+  hasReachedMaxVoters: boolean;
+  restaurants: Array<{
+    id: string;
+    name: string;
+    placeId: string;
+  }>;
+}
+
 export default function VotePage() {
   const params = useParams();
-  const voteId = params.id;
+  const voteId = params.id as string;
 
-  const mockPoll = {
-    id: voteId,
-    title: "Rank your favorite restaurants",
-    options: [
-      {
-        id: "1",
-        name: "Tartine Bakery",
-        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
-      },
-      {
-        id: "2",
-        name: "Restaurant B",
-        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
-      },
-      {
-        id: "3",
-        name: "Restaurant C",
-        link: "https://www.google.com/maps/place/Tartine+Bakery/@37.7767135,-122.4353989,15z/data=!4m6!3m5!1s0x808f7e1807365605:0x601f7a97f0ce6c6b!8m2!3d37.7614347!4d-122.4240821!16s%2Fm%2F03gmfm5?entry=ttu&g_ep=EgoyMDI1MDYyMy4yIKXMDSoASAFQAw%3D%3D",
-      },
-    ],
-  };
-
+  const [poll, setPoll] = useState<Poll | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [rankedOptions, setRankedOptions] = useState<
-    Array<{ id: string; name: string; link: string }>
-  >([...mockPoll.options]);
+    Array<{ id: string; name: string; placeId: string }>
+  >([]);
+  const [error, setError] = useState<Error | null>(null);
+  const [isSuccesful, setIsSuccesful] = useState<boolean>(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -109,6 +108,36 @@ export default function VotePage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Fetch poll data on component mount
+  useEffect(() => {
+    const fetchPoll = async () => {
+      try {
+        setLoading(true);
+        setFetchError(null);
+
+        const response = await fetch(`/api/poll/${voteId}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to fetch poll");
+        }
+
+        setPoll(result.poll);
+        setRankedOptions([...result.poll.restaurants]);
+      } catch (error) {
+        setFetchError(
+          error instanceof Error ? error.message : "Failed to fetch poll"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (voteId) {
+      fetchPoll();
+    }
+  }, [voteId]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -156,8 +185,72 @@ export default function VotePage() {
     }
   };
 
-  const [error, setError] = useState<Error | null>(null);
-  const [isSuccesful, setIsSuccesful] = useState<boolean>(false);
+  if (loading) {
+    return (
+      <main className={styles.votePage}>
+        <Flex
+          justify="center"
+          align="center"
+          vertical
+          className={styles.voteContainer}
+        >
+          <Card className={styles.voteCard}>
+            <Flex
+              justify="center"
+              align="center"
+              style={{ minHeight: "200px" }}
+            >
+              <Spin size="large" />
+            </Flex>
+          </Card>
+        </Flex>
+      </main>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <main className={styles.votePage}>
+        <Flex
+          justify="center"
+          align="center"
+          vertical
+          className={styles.voteContainer}
+        >
+          <Card className={styles.voteCard}>
+            <Alert
+              message="Error Loading Poll"
+              description={fetchError}
+              type="error"
+              showIcon
+            />
+          </Card>
+        </Flex>
+      </main>
+    );
+  }
+
+  if (!poll) {
+    return (
+      <main className={styles.votePage}>
+        <Flex
+          justify="center"
+          align="center"
+          vertical
+          className={styles.voteContainer}
+        >
+          <Card className={styles.voteCard}>
+            <Alert
+              message="Poll Not Found"
+              description="The poll you're looking for doesn't exist or is no longer active."
+              type="warning"
+              showIcon
+            />
+          </Card>
+        </Flex>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.votePage}>
@@ -169,7 +262,7 @@ export default function VotePage() {
       >
         <Card className={styles.voteCard}>
           <Title level={2} className={styles.voteTitle}>
-            {mockPoll.title}
+            {poll.title}
           </Title>
 
           <div className={styles.rankingInstructions}>
@@ -210,9 +303,11 @@ export default function VotePage() {
                 type="primary"
                 onClick={handleVote}
                 block
-                disabled={rankedOptions.length === 0}
+                disabled={
+                  rankedOptions.length === 0 || poll.hasReachedMaxVoters
+                }
               >
-                Submit
+                {poll.hasReachedMaxVoters ? "Poll Full" : "Submit"}
               </Button>
             </div>
             <div>
@@ -229,7 +324,9 @@ export default function VotePage() {
           </Space>
 
           <div className={styles.votePollId}>
-            <Text type="secondary">Poll ID: {voteId}</Text>
+            <Text type="secondary">
+              Poll ID: {voteId} • {poll.currentVoters}/{poll.maxVoters} voters
+            </Text>
           </div>
         </Card>
       </Flex>

@@ -9,6 +9,7 @@ import {
   Card,
   Alert,
   Input,
+  Progress,
 } from "antd";
 import { useRouter } from "next/navigation";
 
@@ -25,6 +26,8 @@ export default function Page(): JSX.Element {
   const [restaurantCount, setRestaurantCount] = useState<number>(3);
   const [voterCount, setVoterCount] = useState<number>(3);
   const [loading, setLoading] = useState<boolean>(false);
+  const [redirecting, setRedirecting] = useState<boolean>(false);
+  const [redirectProgress, setRedirectProgress] = useState<number>(0);
   const [alert, setAlert] = useState<{
     type: "success" | "error" | null;
     message: string;
@@ -44,10 +47,11 @@ export default function Page(): JSX.Element {
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
-          title: "Restaurant Ranking Poll",
+          title: titleText || "Restaurant Ranking Poll",
           description: `Poll with ${restaurantCount} restaurants and ${voterCount} voters`,
-          maxRankings: voterCount,
+          maxVoters: voterCount,
           restaurantCount: restaurantCount,
         }),
       });
@@ -59,10 +63,23 @@ export default function Page(): JSX.Element {
       }
 
       setAlert({ type: "success", message: "Poll created successfully!" });
-      // Navigate to the poll page or wherever you want to go after creation
-      setTimeout(() => {
-        router.push("/rank");
-      }, 1500);
+      const poll = data.poll;
+
+      // Start redirect progress
+      setRedirecting(true);
+      setRedirectProgress(0);
+
+      // Animate progress bar over 1.5 seconds
+      const progressInterval = setInterval(() => {
+        setRedirectProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            router.push(`/vote/${poll.id}`);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 150); // 150ms intervals to reach 100% in 1.5 seconds
     } catch (error) {
       setAlert({
         type: "error",
@@ -92,6 +109,21 @@ export default function Page(): JSX.Element {
             />
           )}
 
+          {redirecting && (
+            <div>
+              <Typography.Text>Redirecting to voting page...</Typography.Text>
+              <Progress
+                percent={redirectProgress}
+                status="active"
+                strokeColor={{
+                  "0%": "#108ee9",
+                  "100%": "#87d068",
+                }}
+                showInfo={false}
+              />
+            </div>
+          )}
+
           <Space direction="vertical" style={styles.fullWidth}>
             <label htmlFor="restaurant-count">
               Number of restaurants to choose from:
@@ -105,7 +137,7 @@ export default function Page(): JSX.Element {
               style={styles.fullWidth}
             />
 
-            <label htmlFor="restaurant-count">Number of voters:</label>
+            <label htmlFor="voter-count">Number of voters:</label>
             <InputNumber
               id="participant-count"
               min={3}
@@ -115,9 +147,7 @@ export default function Page(): JSX.Element {
               style={styles.fullWidth}
             />
 
-            <label htmlFor="restaurant-count">
-              Add a short title for this:
-            </label>
+            <label htmlFor="title-text">Add a short title for this:</label>
             <Input
               id="title-text"
               value={titleText}
@@ -133,6 +163,7 @@ export default function Page(): JSX.Element {
             loading={loading}
             onClick={createPoll}
             style={styles.fullWidth}
+            disabled={redirecting}
           >
             Create Poll
           </Button>

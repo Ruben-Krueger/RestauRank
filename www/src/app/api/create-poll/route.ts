@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const prisma = getDB();
     const body = await request.json();
-    const { title, voterCount, restaurantCount } = body;
+    const { title, maxVoters, restaurantCount } = body;
 
     // Validate required fields
     if (!title || typeof title !== "string") {
@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!voterCount && (voterCount < 3 || voterCount > 10)) {
+    if (!maxVoters || maxVoters < 3 || maxVoters > 10) {
       return NextResponse.json(
-        { error: "Max rankings must be between 1 and 10" },
+        { error: "Number of voters must be between 3 and 10" },
         { status: 400 }
       );
     }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const poll = await prisma.poll.create({
       data: {
         title: title.trim(),
-        maxVoters: voterCount,
+        maxVoters,
       },
     });
 
