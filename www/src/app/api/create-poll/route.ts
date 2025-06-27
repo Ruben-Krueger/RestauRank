@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "../../../utils/db";
+import { PrismaClient } from "@prisma/client/extension";
+
+async function getRandomRecords(
+  prisma: PrismaClient,
+  n: number
+): Promise<
+  {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    name: string;
+    placeId: string;
+  }[]
+> {
+  return prisma.$queryRaw`
+    SELECT * FROM "Restaurant" 
+    ORDER BY RANDOM() 
+    LIMIT ${n}
+  `;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,9 +57,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const availableRestaurants = await prisma.restaurant.findMany({
-      take: restaurantCount,
-    });
+    const availableRestaurants = await getRandomRecords(
+      prisma,
+      restaurantCount
+    );
 
     if (availableRestaurants < restaurantCount) {
       return NextResponse.json(

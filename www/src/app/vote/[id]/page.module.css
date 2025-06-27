@@ -96,3 +96,21 @@
 .infoButton:hover {
   color: #1890ff;
 }
+
+.resultItem {
+  background: #f8f9fa;
+  border-color: #d9d9d9;
+  cursor: default;
+}
+
+.resultItem:hover {
+  border-color: #d9d9d9;
+  box-shadow: none;
+}
+
+.resultRankBadge {
+  background: #52c41a;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}

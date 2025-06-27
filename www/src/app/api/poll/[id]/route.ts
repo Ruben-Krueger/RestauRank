@@ -3,11 +3,11 @@ import { getDB } from "../../../../utils/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const prisma = getDB();
-    const pollId = params.id;
+    const { id: pollId } = await params;
 
     // Validate poll ID
     if (!pollId) {
