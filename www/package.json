@@ -5,13 +5,17 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "npx prisma generate && next build",
+    "build:prod": "npx prisma generate --no-engine && npx prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "populate": "tsx scripts/populate-restaurants.ts",
     "postinstall": "npx prisma generate",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
-    "db:migrate": "npx prisma migrate deploy"
+    "db:migrate": "npx prisma migrate deploy",
+    "db:init": "bash scripts/init-db.sh",
+    "db:reset": "npx prisma migrate reset",
+    "db:studio": "npx prisma studio"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
