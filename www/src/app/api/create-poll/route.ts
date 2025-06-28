@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "../../../utils/db";
 import { PrismaClient } from "@prisma/client/extension";
+import { checkRateLimitOrThrow } from "../../../utils/rateLimit";
 
 async function getRandomRecords(
   prisma: PrismaClient,
@@ -23,6 +24,13 @@ async function getRandomRecords(
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit first
+    const rateLimitResponse = await checkRateLimitOrThrow(request);
+
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const prisma = getDB();
     const body = await request.json();
     const { title, maxVoters, restaurantCount } = body;

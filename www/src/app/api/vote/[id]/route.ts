@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "../../../../utils/db";
+import { checkRateLimitOrThrow } from "@/utils/rateLimit";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check rate limit first
+    const rateLimitResponse = await checkRateLimitOrThrow(request);
+
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const prisma = getDB();
     const { id: pollId } = await params;
     const body = await request.json();
