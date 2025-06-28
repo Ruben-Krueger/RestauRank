@@ -16,6 +16,9 @@ const eslintConfig = [
       "import/no-duplicates": "error",
     },
   },
+  {
+    ignores: ["src/generated/**/*"],
+  },
 ];
 
 export default eslintConfig;
